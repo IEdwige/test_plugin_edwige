@@ -43,6 +43,9 @@ class ZoomDep:
             application at run time.
         :type iface: QgsInterface
         """
+        
+        print('__init__')
+        
         # Save reference to the QGIS interface
         self.iface = iface
         # initialize plugin directory
@@ -132,6 +135,8 @@ class ZoomDep:
             added to self.actions list.
         :rtype: QAction
         """
+        
+        print('add_action')
 
         icon = QIcon(icon_path)
         action = QAction(icon, text, parent)
@@ -160,6 +165,8 @@ class ZoomDep:
     def initGui(self):
         """Create the menu entries and toolbar icons inside the QGIS GUI."""
 
+        print('initGui')
+
         icon_path = ':/plugins/zoom_dep/icon.png'
         self.add_action(
             icon_path,
@@ -173,6 +180,9 @@ class ZoomDep:
 
     def unload(self):
         """Removes the plugin menu item and icon from QGIS GUI."""
+        
+        print('unload')
+        
         for action in self.actions:
             self.iface.removePluginMenu(
                 self.tr(u'&Zoom Dep'),
@@ -182,6 +192,8 @@ class ZoomDep:
 
     def run(self):
         """Run method that performs all the real work"""
+        
+        print('run')
 
         # Create the dialog with elements (after translation) and keep reference
         # Only create GUI ONCE in callback, so that it will only load when the plugin is started
@@ -189,12 +201,30 @@ class ZoomDep:
             self.first_start = False
             self.dlg = ZoomDepDialog()
 
+        self.dlg.zoompushButton.clicked.connect(self.zoom)
+        self.dlg.depListWidget.setSortingEnabled(True)    ### Permet de trier la list par ordre alphabetique (peut aussi être fait dans Qt Designer)
+        dep = self.iface.activeLayer()
+        self.dlg.depListWidget.clear()
+        
+        for ft in dep.getFeatures():
+            self.dlg.depListWidget.addItem(ft["NOM_DEP"])
+
+        #### self.dlg.depListWidget.sortItems(order=AscendingOrder) : Test pour ordonner la liste
         # show the dialog
         self.dlg.show()
         # Run the dialog event loop
+        
         result = self.dlg.exec_()
         # See if OK was pressed
         if result:
             # Do something useful here - delete the line containing pass and
             # substitute with your code.
             pass
+
+    def zoom(self):
+        print('ZOOM')
+        nom_dep = self.dlg.depListWidget.selectedItems()[0].text()  # ou currentItem()
+        dep = self.iface.activeLayer()
+        dep.selectByExpression("\"NOM_DEP\"='{}'".format(nom_dep))
+        self.iface.mapCanvas().zoomToSelected()
+
